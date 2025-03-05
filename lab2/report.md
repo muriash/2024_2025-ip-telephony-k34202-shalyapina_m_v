@@ -79,6 +79,64 @@ Switch(config-if-range)#switchport voice vlan 1
    
 ### Часть 2
 
+1. Собираем схему согласно заданию
+
+![4](./assets/4.jpg)
+   
+2. На коммутаторе настроим vlan 10 и 20 для передачи данных и голоса соответственно
+```
+Switch(config)#vlan 10
+Switch(config-vlan)#name data
+Switch(config-vlan)#exit
+Switch(config)#vlan 20
+Switch(config-vlan)#name voice
+Switch(config-vlan)#exit
+Switch(config)#int range fa0/2-4
+Switch(config-if-range)#switchport mode access
+Switch(config-if-range)#switchport voice vlan 20
+Switch(config-if-range)#switchport access vlan 10
+Switch(config-if-range)#exit
+Switch(config)#int fa0/1
+Switch(config-if)#switchport mode trunk
+Switch(config-if)#exit
+```
+3. Дальше настроим роутер. Добавим DHCP пулы:
+```
+Router(config)#ip dhcp pool VoIP
+Router(dhcp-config)#network 10.20.0.0 255.255.255.0
+Router(dhcp-config)#default-router 10.20.0.1
+Router(dhcp-config)#option 150 ip 10.20.0.1
+Router(dhcp-config)#exit
+Router(config)#ip dhcp excluded-address 10.20.0.1
+Router(config)#ip dhcp excluded-address 10.10.0.1
+Router(config)#ip dhcp pool Data
+Router(dhcp-config)#network 10.10.0.0 255.255.255.0
+Router(dhcp-config)#default-router 10.10.0.1
+Router(dhcp-config)#exit
+```
+
+Пропишем саб-интерфейсы:
+```
+Router(config)#int fa0/0.10
+Router(config-subif)#encapsulation Dot1Q 10
+Router(config-subif)#ip address 10.10.0.1 255.255.255.0
+Router(config-subif)#exit
+Router(config)#int fa0/0.20
+Router(config-subif)#encapsulation Dot1Q 20
+Router(config-subif)#ip address 10.20.0.1 255.255.255.0
+Router(config-subif)#exit
+```
+
+И аналогично предыдущему заданию поднимаем и настраиваем телефонный сервис
+
+4. Теперь нужно подключить телефоны, включить на ПК протокол DHCP и можно проверять
+
+![5](./assets/5.jpg)
+
+![6](./assets/6.jpg)
+
+![7](./assets/7.jpg)
 
 
 ## Выводы
+В ходе выполнения лабораторной работы были настроены две схемы подключения с IP-телефонией
